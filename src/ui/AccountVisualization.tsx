@@ -5,11 +5,13 @@ import {
   removeDuplicateAccounts,
 } from '../balance-utils';
 import { Interval, makeBucketNames } from '../date-utils';
+import { EnhancedTransaction } from '../parser';
 import { IBarChartOptions, ILineChartOptions } from 'chartist';
 import { Moment } from 'moment';
 import React from 'react';
 import ChartistGraph from 'react-chartist';
 import styled from 'styled-components';
+import { AccountPieChart } from './AccountPieChart';
 
 const ChartHeader = styled.div`
   display: flex;
@@ -38,6 +40,8 @@ export const AccountVisualization: React.FC<{
   startDate: Moment;
   endDate: Moment;
   interval: Interval;
+  transactions: EnhancedTransaction[];
+  currencySymbol: string;
 }> = (props): JSX.Element => {
   // TODO: Set the default mode based on the type of account selected
   const [mode, setMode] = React.useState('balance');
@@ -51,6 +55,9 @@ export const AccountVisualization: React.FC<{
     props.endDate,
   );
 
+  // Check if we have exactly one account selected for pie chart eligibility
+  const canShowPieChart = filteredAccounts.length === 1;
+  
   const visualization =
     mode === 'balance' ? (
       <BalanceVisualization
@@ -59,7 +66,7 @@ export const AccountVisualization: React.FC<{
         accounts={filteredAccounts}
         dateBuckets={dateBuckets}
       />
-    ) : (
+    ) : mode === 'pnl' ? (
       <DeltaVisualization
         dailyAccountBalanceMap={props.dailyAccountBalanceMap}
         allAccounts={props.allAccounts}
@@ -67,6 +74,14 @@ export const AccountVisualization: React.FC<{
         dateBuckets={dateBuckets}
         startDate={props.startDate}
         interval={props.interval}
+      />
+    ) : (
+      <AccountPieChart
+        transactions={props.transactions}
+        selectedAccount={filteredAccounts[0]}
+        startDate={props.startDate}
+        endDate={props.endDate}
+        currencySymbol={props.currencySymbol}
       />
     );
 
@@ -83,17 +98,22 @@ export const AccountVisualization: React.FC<{
           >
             <option value="balance">Account Balance</option>
             <option value="pnl">Profit and Loss</option>
+            {canShowPieChart && (
+              <option value="subcategory">Subcategory Distribution</option>
+            )}
           </select>
         </ChartTypeSelector>
-        <Legend>
-          <ul className="ct-legend">
-            {filteredAccounts.map((account, i) => (
-              <li key={account} className={`ct-series-${i}`}>
-                {account}
-              </li>
-            ))}
-          </ul>
-        </Legend>
+        {mode !== 'subcategory' && (
+          <Legend>
+            <ul className="ct-legend">
+              {filteredAccounts.map((account, i) => (
+                <li key={account} className={`ct-series-${i}`}>
+                  {account}
+                </li>
+              ))}
+            </ul>
+          </Legend>
+        )}
       </ChartHeader>
       <Chart>{visualization}</Chart>
     </>

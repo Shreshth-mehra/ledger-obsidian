@@ -176,6 +176,8 @@ const DesktopDashboard: React.FC<{
                 startDate={startDate}
                 endDate={endDate}
                 interval={interval}
+                transactions={props.txCache.transactions}
+                currencySymbol={props.settings.currencySymbol}
               />
               <TransactionList
                 currencySymbol={props.settings.currencySymbol}

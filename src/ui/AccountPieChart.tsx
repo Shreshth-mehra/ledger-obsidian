@@ -1,0 +1,234 @@
+import { filterByStartDate, filterByEndDate, filterTransactions } from '../transaction-utils';
+import { EnhancedTransaction } from '../parser';
+import { IPieChartOptions } from 'chartist';
+import { Moment } from 'moment';
+import React from 'react';
+import ChartistGraph from 'react-chartist';
+import styled from 'styled-components';
+
+const Chart = styled.div`
+  .ct-legend {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  .ct-legend li {
+    position: relative;
+    padding-left: 1.5rem;
+    font-size: 0.9rem;
+  }
+  
+  .ct-legend li:before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.3rem;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 2px;
+  }
+  
+  .ct-legend .ct-series-a:before { background-color: #8B9BB4; }
+  .ct-legend .ct-series-b:before { background-color: #A8C1A1; }
+  .ct-legend .ct-series-c:before { background-color: #E6C79C; }
+  .ct-legend .ct-series-d:before { background-color: #D4A5A5; }
+  .ct-legend .ct-series-e:before { background-color: #B8A9C9; }
+  .ct-legend .ct-series-f:before { background-color: #9FC5E8; }
+  .ct-legend .ct-series-g:before { background-color: #B6D7A8; }
+  .ct-legend .ct-series-h:before { background-color: #FFD1DC; }
+  .ct-legend .ct-series-i:before { background-color: #F4C2A1; }
+  .ct-legend .ct-series-j:before { background-color: #D0A3BF; }
+  .ct-legend .ct-series-k:before { background-color: #A3D5D3; }
+  .ct-legend .ct-series-l:before { background-color: #E8D5B7; }
+
+  /* Chart slice colors - multiple selectors to ensure colors apply */
+  .ct-chart-pie .ct-series-a .ct-slice-pie,
+  .ct-chart-pie .ct-series-a .ct-slice-pie path { fill: #8B9BB4 !important; }
+  
+  .ct-chart-pie .ct-series-b .ct-slice-pie,
+  .ct-chart-pie .ct-series-b .ct-slice-pie path { fill: #A8C1A1 !important; }
+  
+  .ct-chart-pie .ct-series-c .ct-slice-pie,
+  .ct-chart-pie .ct-series-c .ct-slice-pie path { fill: #E6C79C !important; }
+  
+  .ct-chart-pie .ct-series-d .ct-slice-pie,
+  .ct-chart-pie .ct-series-d .ct-slice-pie path { fill: #D4A5A5 !important; }
+  
+  .ct-chart-pie .ct-series-e .ct-slice-pie,
+  .ct-chart-pie .ct-series-e .ct-slice-pie path { fill: #B8A9C9 !important; }
+  
+  .ct-chart-pie .ct-series-f .ct-slice-pie,
+  .ct-chart-pie .ct-series-f .ct-slice-pie path { fill: #9FC5E8 !important; }
+  
+  .ct-chart-pie .ct-series-g .ct-slice-pie,
+  .ct-chart-pie .ct-series-g .ct-slice-pie path { fill: #B6D7A8 !important; }
+  
+  .ct-chart-pie .ct-series-h .ct-slice-pie,
+  .ct-chart-pie .ct-series-h .ct-slice-pie path { fill: #FFD1DC !important; }
+  
+  .ct-chart-pie .ct-series-i .ct-slice-pie,
+  .ct-chart-pie .ct-series-i .ct-slice-pie path { fill: #F4C2A1 !important; }
+  
+  .ct-chart-pie .ct-series-j .ct-slice-pie,
+  .ct-chart-pie .ct-series-j .ct-slice-pie path { fill: #D0A3BF !important; }
+  
+  .ct-chart-pie .ct-series-k .ct-slice-pie,
+  .ct-chart-pie .ct-series-k .ct-slice-pie path { fill: #A3D5D3 !important; }
+  
+  .ct-chart-pie .ct-series-l .ct-slice-pie,
+  .ct-chart-pie .ct-series-l .ct-slice-pie path { fill: #E8D5B7 !important; }
+
+  /* Fallback: If series classes don't work, try targeting by slice index */
+  .ct-slice-pie:nth-child(1) { fill: #8B9BB4 !important; }
+  .ct-slice-pie:nth-child(2) { fill: #A8C1A1 !important; }
+  .ct-slice-pie:nth-child(3) { fill: #E6C79C !important; }
+  .ct-slice-pie:nth-child(4) { fill: #D4A5A5 !important; }
+  .ct-slice-pie:nth-child(5) { fill: #B8A9C9 !important; }
+  .ct-slice-pie:nth-child(6) { fill: #9FC5E8 !important; }
+  .ct-slice-pie:nth-child(7) { fill: #B6D7A8 !important; }
+  .ct-slice-pie:nth-child(8) { fill: #FFD1DC !important; }
+  .ct-slice-pie:nth-child(9) { fill: #F4C2A1 !important; }
+  .ct-slice-pie:nth-child(10) { fill: #D0A3BF !important; }
+  .ct-slice-pie:nth-child(11) { fill: #A3D5D3 !important; }
+  .ct-slice-pie:nth-child(12) { fill: #E8D5B7 !important; }
+`;
+
+interface SubcategoryData {
+  label: string;
+  value: number;
+  percentage: number;
+}
+
+/**
+ * Extracts the immediate subcategory from an account path.
+ * For example: "Expenses:Food:Groceries" with parent "Expenses" returns "Food"
+ */
+const getSubcategory = (accountPath: string, parentAccount: string): string => {
+  const prefix = parentAccount + ':';
+  if (!accountPath.startsWith(prefix)) {
+    return accountPath;
+  }
+  
+  const remainder = accountPath.substring(prefix.length);
+  const nextColonIndex = remainder.indexOf(':');
+  
+  return nextColonIndex === -1 ? remainder : remainder.substring(0, nextColonIndex);
+};
+
+/**
+ * Aggregates transaction amounts by subcategory for a given parent account
+ */
+const aggregateBySubcategory = (
+  transactions: EnhancedTransaction[],
+  parentAccount: string,
+  startDate: Moment,
+  endDate: Moment
+): SubcategoryData[] => {
+  // Filter transactions by date range
+  const filteredTxs = filterTransactions(
+    filterTransactions(transactions, filterByStartDate(startDate)),
+    filterByEndDate(endDate)
+  );
+  
+  const subcategoryTotals = new Map<string, number>();
+  
+  filteredTxs.forEach(tx => {
+    tx.value.expenselines.forEach(line => {
+      if ('dealiasedAccount' in line && line.dealiasedAccount.startsWith(parentAccount)) {
+        const subcategory = getSubcategory(line.dealiasedAccount, parentAccount);
+        
+        // For expense and income accounts, we want absolute values for pie chart
+        // For asset/liability accounts, we use actual values
+        const isExpenseOrIncome = parentAccount.toLowerCase().includes('expense') || 
+                                 parentAccount.toLowerCase().includes('income');
+        const amount = isExpenseOrIncome ? Math.abs(line.amount) : line.amount;
+        
+        subcategoryTotals.set(subcategory, (subcategoryTotals.get(subcategory) || 0) + amount);
+      }
+    });
+  });
+  
+  // Convert to array and calculate percentages
+  const totalAmount = Array.from(subcategoryTotals.values()).reduce((sum, val) => sum + val, 0);
+  
+  if (totalAmount === 0) return [];
+  
+  return Array.from(subcategoryTotals.entries())
+    .map(([label, value]) => ({
+      label,
+      value,
+      percentage: (value / totalAmount) * 100
+    }))
+    .sort((a, b) => b.value - a.value); // Sort by value descending
+};
+
+export const AccountPieChart: React.FC<{
+  transactions: EnhancedTransaction[];
+  selectedAccount: string;
+  startDate: Moment;
+  endDate: Moment;
+  currencySymbol: string;
+}> = (props): JSX.Element => {
+  const subcategoryData = React.useMemo(() => 
+    aggregateBySubcategory(
+      props.transactions,
+      props.selectedAccount,
+      props.startDate,
+      props.endDate
+    ), 
+    [props.transactions, props.selectedAccount, props.startDate, props.endDate]
+  );
+
+  if (subcategoryData.length === 0) {
+    return (
+      <div>
+        <h3>Subcategory Distribution</h3>
+        <p>No data available for the selected account and date range.</p>
+      </div>
+    );
+  }
+
+  const chartData = {
+    labels: subcategoryData.map(item => item.label), // Simple labels, no percentages on chart
+    series: subcategoryData.map(item => item.value)
+  };
+
+  const options: IPieChartOptions = {
+    height: '300px',
+    width: '100%',
+    donut: false,
+    showLabel: false, // Hide labels on the chart itself
+  };
+
+  return (
+    <div>
+      <h3>Subcategory Distribution - {props.selectedAccount}</h3>
+      <p>
+        <i>
+          Total: {props.currencySymbol}
+          {subcategoryData.reduce((sum, item) => sum + item.value, 0).toFixed(2)}
+        </i>
+      </p>
+      
+      <Chart>
+        <ChartistGraph 
+          data={chartData} 
+          options={options} 
+          type="Pie" 
+        />
+        
+        <ul className="ct-legend">
+          {subcategoryData.map((item, index) => (
+            <li key={item.label} className={`ct-series-${String.fromCharCode(97 + index)}`}>
+              {item.label}: {props.currencySymbol}{item.value.toFixed(2)} ({item.percentage.toFixed(1)}%)
+            </li>
+          ))}
+        </ul>
+      </Chart>
+    </div>
+  );
+};
