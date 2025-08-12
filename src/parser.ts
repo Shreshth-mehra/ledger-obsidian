@@ -8,6 +8,24 @@ import { Grammar, Parser } from 'nearley';
 import { err, ok, Result } from 'neverthrow';
 
 /**
+ * Extracts hashtags from a comment string.
+ * Example: "coffee with friends #experience #social" → ["experience", "social"]
+ */
+const extractTagsFromComment = (comment?: string): string[] => {
+  if (!comment) return [];
+  
+  const tagRegex = /#(\w+)/g;
+  const tags: string[] = [];
+  let match;
+  
+  while ((match = tagRegex.exec(comment)) !== null) {
+    tags.push(match[1].toLowerCase()); // Convert to lowercase for consistency
+  }
+  
+  return tags;
+};
+
+/**
  * TransactionCache contains information from the parsed ledger file. It
  * includes both the raw data that is necessary to reconstruct the ledger file,
  * as well as data structures more useful for interaction.
@@ -78,6 +96,7 @@ export interface EnhancedExpenseLine {
   currency?: string;
   dealiasedAccount: string;
   reconcile: '' | '*' | '!';
+  tags: string[];
 }
 
 export interface Commentline {
@@ -224,6 +243,7 @@ export const parse = (
               currency: line.currency,
               reconcile: line.reconcile,
               amount: line.amount || 0, // safe due to fillMissingAmount
+              tags: extractTagsFromComment(line.comment),
             };
           },
         );

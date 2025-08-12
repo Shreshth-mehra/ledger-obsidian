@@ -109,8 +109,53 @@ interface TableRow {
   total: string;
   from: string;
   to: string | JSX.Element;
+  tags: JSX.Element;
   actions: JSX.Element;
 }
+
+/**
+ * Extracts all unique tags from a transaction's expense lines
+ */
+const extractTransactionTags = (tx: EnhancedTransaction): string[] => {
+  const allTags = new Set<string>();
+  
+  tx.value.expenselines.forEach(line => {
+    if ('tags' in line && line.tags) {
+      line.tags.forEach(tag => allTags.add(tag));
+    }
+  });
+  
+  return Array.from(allTags).sort();
+};
+
+/**
+ * Renders tags as styled badges
+ */
+const renderTags = (tags: string[]): JSX.Element => {
+  if (tags.length === 0) {
+    return <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>-</span>;
+  }
+  
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+      {tags.map(tag => (
+        <span
+          key={tag}
+          style={{
+            backgroundColor: 'var(--background-secondary)',
+            color: 'var(--text-normal)',
+            padding: '2px 6px',
+            borderRadius: '3px',
+            fontSize: '0.8em',
+            border: '1px solid var(--background-modifier-border)',
+          }}
+        >
+          #{tag}
+        </span>
+      ))}
+    </div>
+  );
+};
 
 const buildTableRows = (
   transactions: EnhancedTransaction[],
@@ -173,6 +218,8 @@ const buildTableRows = (
       );
     }
 
+    const transactionTags = extractTransactionTags(tx);
+
     if (nonCommentLines.length === 2) {
       // If there are only two lines, then this is a simple 'from->to' transaction
       return {
@@ -181,6 +228,7 @@ const buildTableRows = (
         total: getTotal(tx, currencySymbol),
         from: nonCommentLines[1].account,
         to: nonCommentLines[0].account,
+        tags: renderTags(transactionTags),
         actions: makeClone(tx),
       };
     }
@@ -191,6 +239,7 @@ const buildTableRows = (
       total: getTotal(tx, currencySymbol),
       from: nonCommentLines[nonCommentLines.length - 1].account,
       to: <i>Multiple</i>,
+      tags: renderTags(transactionTags),
       actions: makeClone(tx),
     };
   });
@@ -306,6 +355,10 @@ const TransactionTable: React.FC<{
       {
         Header: 'To Account',
         accessor: 'to',
+      },
+      {
+        Header: 'Tags',
+        accessor: 'tags',
       },
       {
         Header: '',

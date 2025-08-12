@@ -304,6 +304,7 @@ const lineToEnhancedExpenseLine = (line: Line): EnhancedExpenseLine => ({
   reconcile: line.reconcile,
   comment: line.comment || undefined,
   currency: line.currency,
+  tags: [], // Note: Tags are extracted during parsing, not in UI
 });
 
 export interface Values {
