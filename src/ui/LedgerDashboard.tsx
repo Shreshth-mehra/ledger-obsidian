@@ -18,6 +18,8 @@ import {
   FlexShrink,
 } from './SharedStyles';
 import { RecentTransactionList, TransactionList } from './TransactionList';
+import { TagPieChart } from './TagPieChart';
+import { CollapsibleSection } from './CollapsibleSection';
 import { Step, Steps } from 'intro.js-react';
 import { Platform } from 'obsidian';
 import React from 'react';
@@ -159,6 +161,14 @@ const DesktopDashboard: React.FC<{
                 interval={interval}
                 settings={props.settings}
               />
+              <CollapsibleSection title="Tag Distribution" defaultExpanded={false}>
+                <TagPieChart
+                  transactions={props.txCache.transactions}
+                  startDate={startDate}
+                  endDate={endDate}
+                  currencySymbol={props.settings.currencySymbol}
+                />
+              </CollapsibleSection>
               <RecentTransactionList
                 currencySymbol={props.settings.currencySymbol}
                 txCache={props.txCache}
