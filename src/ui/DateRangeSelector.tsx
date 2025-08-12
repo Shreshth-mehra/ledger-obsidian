@@ -13,6 +13,36 @@ import styled from 'styled-components';
 
 const MarginSpan = styled.span`
   margin: 0 12px;
+  
+  @media (max-width: 768px) {
+    margin: 0.5rem 0;
+  }
+`;
+
+const ResponsiveDateContainer = styled(FlexContainer)`
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1rem;
+  }
+`;
+
+const ResponsiveIntervalButtons = styled(FlexFloatRight)`
+  @media (max-width: 768px) {
+    margin-left: 0;
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+`;
+
+const ResponsiveDateInputs = styled(FlexShrink)`
+  @media (max-width: 768px) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
 `;
 
 export const DateRangeSelector: React.FC<{
@@ -23,8 +53,8 @@ export const DateRangeSelector: React.FC<{
   interval: Interval;
   setInterval: React.Dispatch<React.SetStateAction<Interval>>;
 }> = (props): JSX.Element => (
-  <FlexContainer>
-    <FlexFloatRight className="ledger-interval-selectors">
+  <ResponsiveDateContainer>
+    <ResponsiveIntervalButtons className="ledger-interval-selectors">
       <Button
         selected={props.interval === 'day'}
         action={() => {
@@ -67,9 +97,9 @@ export const DateRangeSelector: React.FC<{
       >
         Monthly
       </Button>
-    </FlexFloatRight>
+    </ResponsiveIntervalButtons>
 
-    <FlexShrink className="ledger-daterange-selectors">
+    <ResponsiveDateInputs className="ledger-daterange-selectors">
       <DatePicker
         type="date"
         placeholder="Start"
@@ -110,8 +140,8 @@ export const DateRangeSelector: React.FC<{
           }
         }}
       />
-    </FlexShrink>
-  </FlexContainer>
+    </ResponsiveDateInputs>
+  </ResponsiveDateContainer>
 );
 
 const validateAndUpdateStartDate = (

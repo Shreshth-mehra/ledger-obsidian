@@ -21,12 +21,29 @@ import { RecentTransactionList, TransactionList } from './TransactionList';
 import { TagPieChart } from './TagPieChart';
 import { CollapsibleSection } from './CollapsibleSection';
 import { Step, Steps } from 'intro.js-react';
-import { Platform } from 'obsidian';
 import React from 'react';
 import styled from 'styled-components';
 
 const FlexSidebar = styled(FlexShrink)`
   flex-basis: 20%;
+  
+  @media (max-width: 768px) {
+    flex-basis: 100%;
+    order: 1;
+    margin-bottom: 1rem;
+  }
+`;
+
+const ResponsiveFlexContainer = styled(FlexContainer)`
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
+`;
+
+const ResponsiveMainContent = styled(FlexMainContent)`
+  @media (max-width: 768px) {
+    order: 2;
+  }
 `;
 
 export const LedgerDashboard: React.FC<{
@@ -46,9 +63,7 @@ export const LedgerDashboard: React.FC<{
     props.setTutorialIndex(index); // This updates the saved state
   };
 
-  return Platform.isMobile ? (
-    <MobileDashboard settings={props.settings} txCache={props.txCache} />
-  ) : (
+  return (
     <DesktopDashboard
       tutorialIndex={tutorialIndex}
       setTutorialIndex={setTutorialIndexWrapper}
@@ -59,33 +74,49 @@ export const LedgerDashboard: React.FC<{
   );
 };
 
+const ResponsiveHeader = styled.div`
+  .header-container {
+    display: flex;
+    align-items: center;
+    
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 1rem;
+    }
+  }
+  
+  .header-title {
+    flex-basis: 20%;
+    
+    @media (max-width: 768px) {
+      flex-basis: auto;
+      text-align: center;
+    }
+  }
+  
+  .header-controls {
+    margin-left: auto;
+    flex-shrink: 1;
+    
+    @media (max-width: 768px) {
+      margin-left: 0;
+      width: 100%;
+    }
+  }
+`;
+
 const Header: React.FC<{}> = (props): JSX.Element => (
-  <div>
-    <FlexContainer>
-      <FlexSidebar>
+  <ResponsiveHeader>
+    <div className="header-container">
+      <div className="header-title">
         <h2>Ledger</h2>
-      </FlexSidebar>
-      <FlexFloatRight>{props.children}</FlexFloatRight>
-    </FlexContainer>
-  </div>
+      </div>
+      <div className="header-controls">{props.children}</div>
+    </div>
+  </ResponsiveHeader>
 );
 
-const MobileDashboard: React.FC<{
-  settings: ISettings;
-  txCache: TransactionCache;
-}> = (props): JSX.Element => {
-  const [selectedTab, setSelectedTab] = React.useState('transactions');
 
-  /*
-  return (
-    <MobileTransactionList
-      currencySymbol={props.settings.currencySymbol}
-      txCache={props.txCache}
-    />
-  );
-  */
-  return <p>Dashboard not yet supported on mobile.</p>;
-};
 
 const DesktopDashboard: React.FC<{
   tutorialIndex: number;
@@ -139,7 +170,7 @@ const DesktopDashboard: React.FC<{
         ) : null}
       </Header>
 
-      <FlexContainer>
+      <ResponsiveFlexContainer>
         <FlexSidebar>
           <AccountsList
             txCache={props.txCache}
@@ -148,7 +179,7 @@ const DesktopDashboard: React.FC<{
             setSelectedAccounts={setSelectedAccounts}
           />
         </FlexSidebar>
-        <FlexMainContent>
+        <ResponsiveMainContent>
           {props.txCache.parsingErrors.length > 0 ? (
             <ParseErrors txCache={props.txCache} />
           ) : null}
@@ -202,8 +233,8 @@ const DesktopDashboard: React.FC<{
               />
             </>
           )}
-        </FlexMainContent>
-      </FlexContainer>
+        </ResponsiveMainContent>
+      </ResponsiveFlexContainer>
     </>
   );
 };
