@@ -8,6 +8,11 @@ const defaultSettings: ISettings = {
   expenseAccountsPrefix: 'Expenses',
   incomeAccountsPrefix: 'Income',
   liabilityAccountsPrefix: 'Liabilities',
+
+  // Chart configuration
+  maxDataPoints: 50,
+  defaultView: 'month',
+  notationSystem: 'lakh', // 'lakh' or 'million'
 };
 
 export interface ISettings {
@@ -20,6 +25,11 @@ export interface ISettings {
   expenseAccountsPrefix: string;
   incomeAccountsPrefix: string;
   liabilityAccountsPrefix: string;
+
+  // Chart configuration
+  maxDataPoints: number;
+  defaultView: 'day' | 'week' | 'month' | 'quarter';
+  notationSystem: 'lakh' | 'million';
 }
 
 export const settingsWithDefaults = (

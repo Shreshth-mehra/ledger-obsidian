@@ -6,12 +6,13 @@ import {
 } from '../balance-utils';
 import { Interval, makeBucketNames } from '../date-utils';
 import { EnhancedTransaction } from '../parser';
-import { IBarChartOptions, ILineChartOptions } from 'chartist';
+import { ISettings } from '../settings';
 import { Moment } from 'moment';
 import React from 'react';
-import ChartistGraph from 'react-chartist';
 import styled from 'styled-components';
 import { AccountPieChart } from './AccountPieChart';
+import { RechartsLineChart } from './RechartsLineChart';
+import { RechartsBarChart } from './RechartsBarChart';
 
 const ChartHeader = styled.div`
   display: flex;
@@ -42,6 +43,7 @@ export const AccountVisualization: React.FC<{
   interval: Interval;
   transactions: EnhancedTransaction[];
   currencySymbol: string;
+  settings: ISettings;
 }> = (props): JSX.Element => {
   // TODO: Set the default mode based on the type of account selected
   const [mode, setMode] = React.useState('balance');
@@ -65,6 +67,7 @@ export const AccountVisualization: React.FC<{
         allAccounts={props.allAccounts}
         accounts={filteredAccounts}
         dateBuckets={dateBuckets}
+        settings={props.settings}
       />
     ) : mode === 'pnl' ? (
       <DeltaVisualization
@@ -74,6 +77,7 @@ export const AccountVisualization: React.FC<{
         dateBuckets={dateBuckets}
         startDate={props.startDate}
         interval={props.interval}
+        settings={props.settings}
       />
     ) : (
       <AccountPieChart
@@ -82,6 +86,7 @@ export const AccountVisualization: React.FC<{
         startDate={props.startDate}
         endDate={props.endDate}
         currencySymbol={props.currencySymbol}
+        settings={props.settings}
       />
     );
 
@@ -125,27 +130,28 @@ const BalanceVisualization: React.FC<{
   allAccounts: string[];
   accounts: string[];
   dateBuckets: string[];
+  settings: ISettings;
 }> = (props): JSX.Element => {
-  const data = {
-    labels: props.dateBuckets,
-    series: props.accounts.map((account) =>
-      makeBalanceData(
-        props.dailyAccountBalanceMap,
-        props.dateBuckets,
-        account,
-        props.allAccounts,
-      ),
+  const series = props.accounts.map((account) =>
+    makeBalanceData(
+      props.dailyAccountBalanceMap,
+      props.dateBuckets,
+      account,
+      props.allAccounts,
     ),
-  };
+  );
 
-  const options: ILineChartOptions = {
-    height: '300px',
-    width: '100%',
-    showArea: false,
-    showPoint: true,
-  };
-
-  return <ChartistGraph data={data} options={options} type="Line" />;
+  return (
+    <RechartsLineChart
+      data={series[0] || []}
+      series={series}
+      seriesNames={props.accounts}
+      height="300px"
+      width="100%"
+      settings={props.settings}
+      maxDataPoints={props.settings.maxDataPoints}
+    />
+  );
 };
 
 const DeltaVisualization: React.FC<{
@@ -155,27 +161,30 @@ const DeltaVisualization: React.FC<{
   dateBuckets: string[];
   startDate: Moment;
   interval: Interval;
+  settings: ISettings;
 }> = (props): JSX.Element => {
-  const data = {
-    labels: props.dateBuckets,
-    series: props.accounts.map((account) =>
-      makeDeltaData(
-        props.dailyAccountBalanceMap,
-        props.startDate
-          .clone()
-          .subtract(1, props.interval)
-          .format('YYYY-MM-DD'),
-        props.dateBuckets,
-        account,
-        props.allAccounts,
-      ),
+  const series = props.accounts.map((account) =>
+    makeDeltaData(
+      props.dailyAccountBalanceMap,
+      props.startDate
+        .clone()
+        .subtract(1, props.interval)
+        .format('YYYY-MM-DD'),
+      props.dateBuckets,
+      account,
+      props.allAccounts,
     ),
-  };
+  );
 
-  const options: IBarChartOptions = {
-    height: '300px',
-    width: '100%',
-  };
-
-  return <ChartistGraph data={data} options={options} type="Bar" />;
+  return (
+    <RechartsBarChart
+      data={series[0] || []}
+      series={series}
+      seriesNames={props.accounts}
+      height="300px"
+      width="100%"
+      settings={props.settings}
+      maxDataPoints={props.settings.maxDataPoints}
+    />
+  );
 };

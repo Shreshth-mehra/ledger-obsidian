@@ -1,10 +1,11 @@
 import { filterByStartDate, filterByEndDate, filterTransactions } from '../transaction-utils';
 import { EnhancedTransaction } from '../parser';
-import { IPieChartOptions } from 'chartist';
+import { ISettings } from '../settings';
 import { Moment } from 'moment';
 import React from 'react';
-import ChartistGraph from 'react-chartist';
 import styled from 'styled-components';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { formatCurrency } from '../number-format-utils';
 
 const Chart = styled.div`
   .ct-legend {
@@ -150,6 +151,7 @@ export const TagPieChart: React.FC<{
   startDate: Moment;
   endDate: Moment;
   currencySymbol: string;
+  settings: ISettings;
 }> = (props): JSX.Element => {
   const tagData = React.useMemo(() => 
     aggregateByTags(
@@ -169,38 +171,68 @@ export const TagPieChart: React.FC<{
     );
   }
 
-  const chartData = {
-    labels: tagData.map(item => item.label),
-    series: tagData.map(item => item.value)
-  };
-
-  const options: IPieChartOptions = {
-    height: '300px',
-    width: '100%',
-    donut: false,
-    showLabel: false, // Hide labels on the chart itself
-  };
+  // Transform data for Recharts
+  const chartData = tagData.map((item, index) => ({
+    name: item.label,
+    value: item.value,
+    fill: `hsl(${(index * 137.5) % 360}, 70%, 50%)`
+  }));
 
   return (
     <div>
       <p>
         <i>
-          Total Tagged Spending: {props.currencySymbol}
-          {tagData.reduce((sum, item) => sum + item.value, 0).toFixed(2)}
+          Total Tagged Spending: {formatCurrency(
+            tagData.reduce((sum, item) => sum + item.value, 0),
+            props.currencySymbol,
+            props.settings.notationSystem
+          )}
         </i>
       </p>
       
       <Chart>
-        <ChartistGraph 
-          data={chartData} 
-          options={options} 
-          type="Pie" 
-        />
+        <ResponsiveContainer width="100%" height={300}>
+          <PieChart>
+            <Pie
+              data={chartData}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              outerRadius={80}
+              fill="#8884d8"
+              dataKey="value"
+            >
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
+            </Pie>
+            <Tooltip 
+              formatter={(value: number) => [
+                formatCurrency(value, props.currencySymbol, props.settings.notationSystem),
+                'Amount'
+              ]}
+              contentStyle={{
+                backgroundColor: 'var(--background-primary)',
+                border: '1px solid var(--background-modifier-border)',
+                borderRadius: '4px',
+              }}
+            />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
         
-        <ul className="ct-legend">
+        <ul style={{ listStyle: 'none', padding: 0, marginTop: '1rem' }}>
           {tagData.map((item, index) => (
-            <li key={item.label} className={`ct-series-${String.fromCharCode(97 + index)}`}>
-              #{item.label}: {props.currencySymbol}{item.value.toFixed(2)} ({item.percentage.toFixed(1)}%)
+            <li key={item.label} style={{ marginBottom: '0.5rem' }}>
+              <span style={{ 
+                display: 'inline-block', 
+                width: '12px', 
+                height: '12px', 
+                backgroundColor: `hsl(${(index * 137.5) % 360}, 70%, 50%)`,
+                marginRight: '8px',
+                borderRadius: '2px'
+              }}></span>
+              #{item.label}: {formatCurrency(item.value, props.currencySymbol, props.settings.notationSystem)} ({item.percentage.toFixed(1)}%)
             </li>
           ))}
         </ul>

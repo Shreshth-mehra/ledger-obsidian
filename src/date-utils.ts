@@ -2,7 +2,7 @@ import { getWithDefault } from './generic-utils';
 import { EnhancedTransaction } from './parser';
 import { Moment } from 'moment';
 
-export type Interval = 'day' | 'week' | 'month';
+export type Interval = 'day' | 'week' | 'month' | 'quarter';
 
 /**
  * makeBucketNames creates a list of dates at the provided interval between the
@@ -21,8 +21,15 @@ export const makeBucketNames = (
   const currentDate = startDate.clone();
 
   do {
-    names.push(currentDate.format('YYYY-MM-DD'));
-    currentDate.add(1, interval);
+    if (interval === 'quarter') {
+      // For quarters, format as YYYY-Q1, YYYY-Q2, etc.
+      const quarter = Math.floor(currentDate.month() / 3) + 1;
+      names.push(`${currentDate.year()}-Q${quarter}`);
+      currentDate.add(3, 'month');
+    } else {
+      names.push(currentDate.format('YYYY-MM-DD'));
+      currentDate.add(1, interval);
+    }
   } while (currentDate.isSameOrBefore(endDate));
 
   return names;

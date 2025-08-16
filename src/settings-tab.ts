@@ -119,6 +119,52 @@ export class SettingsTab extends PluginSettingTab {
         };
       });
 
+    containerEl.createEl('h3', { text: 'Chart Configuration' });
+
+    new Setting(containerEl)
+      .setName('Maximum Data Points')
+      .setDesc('Maximum number of data points to show in line graphs')
+      .addSlider((slider) => {
+        slider
+          .setLimits(10, 100, 10)
+          .setValue(this.plugin.settings.maxDataPoints)
+          .setDynamicTooltip()
+          .onChange((value) => {
+            this.plugin.settings.maxDataPoints = value;
+            this.plugin.saveData(this.plugin.settings);
+          });
+      });
+
+    new Setting(containerEl)
+      .setName('Default View')
+      .setDesc('Default interval view when opening the dashboard')
+      .addDropdown((dropdown) => {
+        dropdown
+          .addOption('day', 'Daily')
+          .addOption('week', 'Weekly')
+          .addOption('month', 'Monthly')
+          .addOption('quarter', 'Quarterly')
+          .setValue(this.plugin.settings.defaultView)
+          .onChange((value) => {
+            this.plugin.settings.defaultView = value as 'day' | 'week' | 'month' | 'quarter';
+            this.plugin.saveData(this.plugin.settings);
+          });
+      });
+
+    new Setting(containerEl)
+      .setName('Number Notation System')
+      .setDesc('Choose between Indian (Lakh/Crore) or Western (Million/Billion) notation')
+      .addDropdown((dropdown) => {
+        dropdown
+          .addOption('lakh', 'Indian (Lakh/Crore)')
+          .addOption('million', 'Western (Million/Billion)')
+          .setValue(this.plugin.settings.notationSystem)
+          .onChange((value) => {
+            this.plugin.settings.notationSystem = value as 'lakh' | 'million';
+            this.plugin.saveData(this.plugin.settings);
+          });
+      });
+
     const div = containerEl.createEl('div', {
       cls: 'ledger-donation',
     });

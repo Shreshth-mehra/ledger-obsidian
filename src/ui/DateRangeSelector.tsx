@@ -52,6 +52,7 @@ export const DateRangeSelector: React.FC<{
   setEndDate: React.Dispatch<React.SetStateAction<Moment>>;
   interval: Interval;
   setInterval: React.Dispatch<React.SetStateAction<Interval>>;
+  maxDataPoints?: number;
 }> = (props): JSX.Element => (
   <ResponsiveDateContainer>
     <ResponsiveIntervalButtons className="ledger-interval-selectors">
@@ -64,6 +65,7 @@ export const DateRangeSelector: React.FC<{
             props.startDate,
             props.endDate,
             props.setEndDate,
+            props.maxDataPoints,
           );
         }}
       >
@@ -78,6 +80,7 @@ export const DateRangeSelector: React.FC<{
             props.startDate,
             props.endDate,
             props.setEndDate,
+            props.maxDataPoints,
           );
         }}
       >
@@ -92,10 +95,26 @@ export const DateRangeSelector: React.FC<{
             props.startDate,
             props.endDate,
             props.setEndDate,
+            props.maxDataPoints,
           );
         }}
       >
         Monthly
+      </Button>
+      <Button
+        selected={props.interval === 'quarter'}
+        action={() => {
+          props.setInterval('quarter');
+          validateAndUpdateEndDate(
+            'quarter',
+            props.startDate,
+            props.endDate,
+            props.setEndDate,
+            props.maxDataPoints,
+          );
+        }}
+      >
+        Quarterly
       </Button>
     </ResponsiveIntervalButtons>
 
@@ -115,6 +134,7 @@ export const DateRangeSelector: React.FC<{
               newDate,
               props.endDate,
               props.setEndDate,
+              props.maxDataPoints,
             );
           }
         }}
@@ -136,6 +156,7 @@ export const DateRangeSelector: React.FC<{
               props.startDate,
               newDate,
               props.setStartDate,
+              props.maxDataPoints,
             );
           }
         }}
@@ -149,10 +170,11 @@ const validateAndUpdateStartDate = (
   startDate: Moment,
   endDate: Moment,
   setStartDate: React.Dispatch<React.SetStateAction<Moment>>,
+  maxDataPoints: number = 50,
 ): void => {
-  if (endDate.diff(startDate, interval) > 15) {
-    new Notice('Exceeded maximum time window. Adjusting start date.');
-    setStartDate(endDate.subtract(15, interval));
+  if (endDate.diff(startDate, interval) > maxDataPoints) {
+    new Notice(`Exceeded maximum time window (${maxDataPoints} ${interval}s). Adjusting start date.`);
+    setStartDate(endDate.subtract(maxDataPoints, interval));
   }
 };
 
@@ -161,9 +183,10 @@ const validateAndUpdateEndDate = (
   startDate: Moment,
   endDate: Moment,
   setEndDate: React.Dispatch<React.SetStateAction<Moment>>,
+  maxDataPoints: number = 50,
 ): void => {
-  if (endDate.diff(startDate, interval) > 15) {
-    new Notice('Exceeded maximum time window. Adjusting end date.');
-    setEndDate(startDate.clone().add(15, interval));
+  if (endDate.diff(startDate, interval) > maxDataPoints) {
+    new Notice(`Exceeded maximum time window (${maxDataPoints} ${interval}s). Adjusting end date.`);
+    setEndDate(startDate.clone().add(maxDataPoints, interval));
   }
 };

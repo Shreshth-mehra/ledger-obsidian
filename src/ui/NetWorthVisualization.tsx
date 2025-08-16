@@ -1,11 +1,10 @@
 import { makeNetWorthData } from '../balance-utils';
 import { Interval, makeBucketNames } from '../date-utils';
 import { ISettings } from '../settings';
-import { ILineChartOptions } from 'chartist';
 import { Moment } from 'moment';
 import React from 'react';
-import ChartistGraph from 'react-chartist';
 import styled from 'styled-components';
+import { RechartsLineChart } from './RechartsLineChart';
 
 const Chart = styled.div`
   .ct-label {
@@ -25,32 +24,29 @@ export const NetWorthVisualization: React.FC<{
     props.startDate,
     props.endDate,
   );
-  const data = {
-    labels: dateBuckets,
-    series: [
-      makeNetWorthData(
-        props.dailyAccountBalanceMap,
-        dateBuckets,
-        props.settings,
-      ),
-    ],
-  };
+  const series = [
+    makeNetWorthData(
+      props.dailyAccountBalanceMap,
+      dateBuckets,
+      props.settings,
+    ),
+  ];
 
-  const options: ILineChartOptions = {
-    height: '300px',
-    width: '100%',
-    showArea: false,
-    showPoint: true,
-  };
-
-  const type = 'Line';
   return (
     <>
       <h2>Net Worth</h2>
       <i>Assets minus liabilities</i>
 
       <Chart>
-        <ChartistGraph data={data} options={options} type={type} />
+        <RechartsLineChart
+          data={series[0] || []}
+          series={series}
+          seriesNames={['Net Worth']}
+          height="300px"
+          width="100%"
+          settings={props.settings}
+          maxDataPoints={props.settings.maxDataPoints}
+        />
       </Chart>
     </>
   );

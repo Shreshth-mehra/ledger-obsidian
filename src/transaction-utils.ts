@@ -1,6 +1,7 @@
 import { EnhancedTransaction } from './parser';
 import { some } from 'lodash';
 import { Moment } from 'moment';
+import { formatCurrency } from './number-format-utils';
 
 export const emptyTransaction: EnhancedTransaction = {
   type: 'tx',
@@ -49,9 +50,15 @@ export const formatTransaction = (
 export const getTotal = (
   tx: EnhancedTransaction,
   defaultCurrency: string,
+  settings?: { currencySymbol: string; notationSystem: 'lakh' | 'million' },
 ): string => {
   const currency = getCurrency(tx, defaultCurrency);
   const total = getTotalAsNum(tx);
+  
+  if (settings) {
+    return formatCurrency(total, currency, settings.notationSystem);
+  }
+  
   return currency + total.toFixed(2);
 };
 

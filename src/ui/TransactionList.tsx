@@ -19,6 +19,7 @@ import styled from 'styled-components';
 export const MobileTransactionList: React.FC<{
   currencySymbol: string;
   txCache: TransactionCache;
+  settings?: { currencySymbol: string; notationSystem: 'lakh' | 'million' };
 }> = (props): JSX.Element => (
   // TODO: Add pagination to see more than just the most recent 10 transactions
   // TODO: Key should be based on transaction itself, not list index
@@ -41,6 +42,7 @@ export const MobileTransactionList: React.FC<{
 export const MobileTransactionEntry: React.FC<{
   tx: EnhancedTransaction;
   currencySymbol: string;
+  settings?: { currencySymbol: string; notationSystem: 'lakh' | 'million' };
 }> = (props): JSX.Element => {
   const nonCommentLines = props.tx.value.expenselines.filter(
     (line): line is EnhancedExpenseLine => 'account' in line,
@@ -54,7 +56,7 @@ export const MobileTransactionEntry: React.FC<{
     <div>
       <h3>{props.tx.value.payee}</h3>
       <div>From: {(nonCommentLines.last() as EnhancedExpenseLine).account}</div>
-      <div>Amount: {getTotal(props.tx, props.currencySymbol)}</div>
+      <div>Amount: {getTotal(props.tx, props.currencySymbol, props.settings)}</div>
     </div>
   );
 };
@@ -161,6 +163,7 @@ const buildTableRows = (
   transactions: EnhancedTransaction[],
   currencySymbol: string,
   updater: LedgerModifier,
+  settings?: { currencySymbol: string; notationSystem: 'lakh' | 'million' },
 ): TableRow[] => {
   const makeClone = (tx: EnhancedTransaction): JSX.Element => (
     <>
@@ -225,7 +228,7 @@ const buildTableRows = (
       return {
         date: tx.value.date,
         payee: tx.value.payee,
-        total: getTotal(tx, currencySymbol),
+        total: getTotal(tx, currencySymbol, settings),
         from: nonCommentLines[1].account,
         to: nonCommentLines[0].account,
         tags: renderTags(transactionTags),
@@ -236,7 +239,7 @@ const buildTableRows = (
     return {
       date: tx.value.date,
       payee: tx.value.payee,
-      total: getTotal(tx, currencySymbol),
+      total: getTotal(tx, currencySymbol, settings),
       from: nonCommentLines[nonCommentLines.length - 1].account,
       to: <i>Multiple</i>,
       tags: renderTags(transactionTags),
@@ -265,6 +268,7 @@ export const RecentTransactionList: React.FC<{
   updater: LedgerModifier;
   startDate: Moment;
   endDate: Moment;
+  settings?: { currencySymbol: string; notationSystem: 'lakh' | 'million' };
 }> = (props): JSX.Element => {
   const data = React.useMemo(() => {
     let filteredTransactions = filterTransactions(
@@ -282,8 +286,9 @@ export const RecentTransactionList: React.FC<{
       filteredTransactions,
       props.currencySymbol,
       props.updater,
+      props.settings,
     );
-  }, [props.txCache, props.startDate, props.endDate]);
+  }, [props.txCache, props.startDate, props.endDate, props.settings]);
   return (
     <>
       <h2>Last 10 Transactions for Selected Dates</h2>
@@ -300,6 +305,7 @@ export const TransactionList: React.FC<{
   setSelectedAccount: (accountName: string) => void;
   startDate: Moment;
   endDate: Moment;
+  settings?: { currencySymbol: string; notationSystem: 'lakh' | 'million' };
 }> = (props): JSX.Element => {
   const data = React.useMemo(() => {
     // Filters are applied sequentially when they need to be and-ed together.
@@ -320,8 +326,9 @@ export const TransactionList: React.FC<{
       filteredTransactions,
       props.currencySymbol,
       props.updater,
+      props.settings,
     );
-  }, [props.txCache, props.selectedAccounts, props.startDate, props.endDate]);
+  }, [props.txCache, props.selectedAccounts, props.startDate, props.endDate, props.settings]);
 
   return <TransactionTable data={data} />;
 };

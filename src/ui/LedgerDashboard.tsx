@@ -149,7 +149,7 @@ const DesktopDashboard: React.FC<{
     window.moment().subtract(2, 'months'),
   );
   const [endDate, setEndDate] = React.useState(window.moment());
-  const [interval, setInterval] = React.useState<Interval>('week');
+  const [interval, setInterval] = React.useState<Interval>(props.settings.defaultView);
 
   return (
     <>
@@ -161,6 +161,7 @@ const DesktopDashboard: React.FC<{
           setEndDate={setEndDate}
           interval={interval}
           setInterval={setInterval}
+          maxDataPoints={props.settings.maxDataPoints}
         />
         {props.tutorialIndex !== -1 ? (
           <Tutorial
@@ -198,6 +199,7 @@ const DesktopDashboard: React.FC<{
                   startDate={startDate}
                   endDate={endDate}
                   currencySymbol={props.settings.currencySymbol}
+                  settings={props.settings}
                 />
               </CollapsibleSection>
               <RecentTransactionList
@@ -206,6 +208,7 @@ const DesktopDashboard: React.FC<{
                 updater={props.updater}
                 startDate={startDate}
                 endDate={endDate}
+                settings={props.settings}
               />
             </>
           ) : (
@@ -219,6 +222,7 @@ const DesktopDashboard: React.FC<{
                 interval={interval}
                 transactions={props.txCache.transactions}
                 currencySymbol={props.settings.currencySymbol}
+                settings={props.settings}
               />
               <TransactionList
                 currencySymbol={props.settings.currencySymbol}
@@ -230,6 +234,7 @@ const DesktopDashboard: React.FC<{
                 }
                 startDate={startDate}
                 endDate={endDate}
+                settings={props.settings}
               />
             </>
           )}
